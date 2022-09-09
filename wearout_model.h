@@ -4,6 +4,6 @@ class Wearout_model {
     virtual ~Wearout_model(void){};
 
     /* Wearout scale function. */
-    virtual double operator()(double temp) = 0;
+    virtual long double operator()(long double temp) = 0;
 };
 

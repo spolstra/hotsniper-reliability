@@ -8,24 +8,24 @@ class EM_model : public Wearout_model {
     ~EM_model(void){};
 
     /* Wearout scale function for the EM fault model. */
-    double operator()(double temp) override {
-        double temp_kelvin = celsius_to_kelvin(temp);
+    long double operator()(long double temp) override {
+        long double temp_kelvin = celsius_to_kelvin(temp);
         return (CONST_A0 * (pow(CONST_JMJCRIT, (-CONST_N))) *
                 exp(ACTIVATIONENERGY / (BOLTZMANCONSTANT * temp_kelvin))) /
                CONST_ERRF;
     }
 
    private:
-    double celsius_to_kelvin(double temp) { return temp + ZERO_CEL_IN_KELVIN; }
+    long double celsius_to_kelvin(long double temp) { return temp + ZERO_CEL_IN_KELVIN; }
 
     // Electro-Migration related parameters
-    // const double BETA = 2; // weibull scaling parameter (for CONST_ERRF)
-    const double ACTIVATIONENERGY = 0.48;
-    const double BOLTZMANCONSTANT = 8.6173324 * 0.00001;
-    const double CONST_JMJCRIT = 1500000;
-    const double CONST_N = 1.1;
-    const double CONST_ERRF = 0.88623;  // math.gamma(1 + 1/BETA)
-    const double CONST_A0 = 30000;  // cross section = 1um^2  material constant = 3*10^13
+    // const long double BETA = 2; // weibull scaling parameter (for CONST_ERRF)
+    const long double ACTIVATIONENERGY = 0.48;
+    const long double BOLTZMANCONSTANT = 8.6173324 * 0.00001;
+    const long double CONST_JMJCRIT = 1500000;
+    const long double CONST_N = 1.1;
+    const long double CONST_ERRF = 0.88623;  // math.gamma(1 + 1/BETA)
+    const long double CONST_A0 = 30000;  // cross section = 1um^2  material constant = 3*10^13
     // Thermal model parameters
-    const double ZERO_CEL_IN_KELVIN = 273.15;
+    const long double ZERO_CEL_IN_KELVIN = 273.15;
 };
