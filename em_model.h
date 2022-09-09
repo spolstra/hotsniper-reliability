@@ -24,7 +24,7 @@ class EM_model : public Wearout_model {
     const double BOLTZMANCONSTANT = 8.6173324 * 0.00001;
     const double CONST_JMJCRIT = 1500000;
     const double CONST_N = 1.1;
-    const double CONST_ERRF = 0.88623; // math.gamma(1 + 1/BETA) 
+    const double CONST_ERRF = 0.88623;  // math.gamma(1 + 1/BETA)
     const double CONST_A0 = 30000;  // cross section = 1um^2  material constant = 3*10^13
     // Thermal model parameters
     const double ZERO_CEL_IN_KELVIN = 273.15;

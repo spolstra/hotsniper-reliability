@@ -6,7 +6,8 @@
 
 #include "em_model.h"
 
-// TODO: check if we need to move all doubles to long double for extra precision.
+// TODO: check if we need to move all doubles to long double for extra
+// precision.
 
 using namespace std;
 
@@ -16,7 +17,7 @@ class Rmodel {
     Rmodel(Wearout_model *alpha)
         : current_R(1), current_time_stamp(0), current_sum(0), alpha(alpha){};
 
-    ~Rmodel(void){
+    ~Rmodel(void) {
         delete alpha; /* We own alpha, so we need to free it here. */
     };
 
@@ -88,10 +89,7 @@ void print_temps(vector<vector<double>> temps) {
 }
 
 /* Convert milliseconds to hours. */
-double ms_to_hour(double t) {
-    return t / (60 * 60 * 1000);
-}
-
+double ms_to_hour(double t) { return t / (60 * 60 * 1000); }
 
 int main(void) {
     auto temps = read_temps();
@@ -100,12 +98,13 @@ int main(void) {
     /* Calculate reliability numbers for core 0. */
 
     Rmodel rmodel(new EM_model());
-    double timestamp_h = 0; // Current time in hours.
+    double timestamp_h = 0;  // Current time in hours.
     for (auto sample : temps) {
         double core0_temperature = sample[0];
         cout << "temp: " << core0_temperature;
-        cout << ", R: " << rmodel.add_measurement(core0_temperature, timestamp_h) << endl;
-        timestamp_h += ms_to_hour(1); // sample rate is 1 ms.
+        cout << ", R: "
+             << rmodel.add_measurement(core0_temperature, timestamp_h) << endl;
+        timestamp_h += ms_to_hour(1);  // sample rate is 1 ms.
     }
 
     return 0;
