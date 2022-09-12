@@ -7,10 +7,11 @@ class EM_model : public Wearout_model {
     EM_model(void){};
     ~EM_model(void){};
 
-    /* Wearout scale function for the EM fault model. */
+    /* Wearout scale function for the EM fault model.
+     *  temp in celsius. */
     long double operator()(long double temp) override {
         long double temp_kelvin = celsius_to_kelvin(temp);
-        return (CONST_A0 * (pow(CONST_JMJCRIT, (-CONST_N))) *
+        return (CONST_A0 * pow(CONST_JMJCRIT, -CONST_N) *
                 exp(ACTIVATIONENERGY / (BOLTZMANCONSTANT * temp_kelvin))) /
                CONST_ERRF;
     }

@@ -1,26 +1,20 @@
-CXX = clang++-12
-#CXX = g++-10
+.PHONY: all plot
 
-# address sanitizer
+CXX = clang++-12
 CXXFLAGS = -g3 -Wall -Wextra -fsanitize=address -std=c++2a
 LDFLAGS = -fsanitize=address
-
-# memory sanitizer
-# CXXFLAGS = -g3 -Wall -Wextra -fsanitize=memory -std=c++2a
-# LDFLAGS = -fsanitize=memory
-
-# valgrind
-#CXXFLAGS = -g3 -Wall -Wextra -std=c++2a
-
-# fast
-# CXXFLAGS = -O3 -Wall -Wextra -std=c++2a
-
-# profiling gprof
-# CXXFLAGS = -pg -O3 -Wall -Wextra -std=c++2a
-
 PROGS = reliability
 
 all: $(PROGS)
+
+reliability.o: reliability.cpp em_model.h wearout_model.h
+
+reliability: reliability.o
+	$(CXX) -o $@ $(LDFLAGS) $^
+
+plot: $(PROGS)
+	./reliability < constant-temperature.log > time-R.csv
+	python3 plot-r-data.py
 
 clean:
 	rm -f $(PROGS) *.o

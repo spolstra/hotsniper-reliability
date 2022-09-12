@@ -22,6 +22,9 @@ class Rmodel {
     };
 
     /* Calculate the new R value.
+     * temp in celsius
+     * new_time_stamp in ms
+
        We use equation (5) from the paper [1] (equation (11) in [2]):
        R(t) = exp(-pow((sum(T_j / alpha(T_j))), beta))
 
@@ -103,19 +106,18 @@ int main(void) {
     const long double sample_rate = ms_to_hour(1);  // sample rate is 1 ms.
     long double R = 1.0 ; // new processor reliability.
     long long sample_count = 0;
-    while (R > 0.1) {
+
+    cout << "time,R" << endl;
+    while (R > 0.001) {
         for (auto sample : temps) { // reuse of short temperature trace.
             timestamp_h += sample_rate;
             sample_count++;
             long double core0_temperature = sample[0];
             R = rmodel.add_measurement(core0_temperature, timestamp_h);
             if (sample_count % 10000 == 0) {
-                cout << "time: " << timestamp_h << " temp: " << core0_temperature << ", R: " << R << endl;
+                cout << timestamp_h << ", " << R << endl;
             }
         }
     }
-    cout << "Processor failed after " << sample_count << " samples" << endl;
-    cout << "Which is " << sample_count * sample_rate << " seconds" << endl;
-
     return 0;
 }
