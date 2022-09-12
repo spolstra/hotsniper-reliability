@@ -43,7 +43,8 @@ class Rmodel {
             throw runtime_error("Reliability cannot increase over time");
         }
         current_R = new_R;
-        return current_R;
+        // std::cerr << "sum: " << current_sum << std::endl;
+        return new_R;
     }
 
     long double get_R(void) { return current_R; }
@@ -89,24 +90,32 @@ void print_temps(vector<vector<long double>> temps) {
 }
 
 /* Convert milliseconds to hours. */
-long double ms_to_hour(long double t) { return t / (60 * 60 * 1000); }
+constexpr long double ms_to_hour(long double t) { return t / (60 * 60 * 1000); }
 
 int main(void) {
     auto temps = read_temps();
-    print_temps(temps);
+    // print_temps(temps);
 
     /* Calculate reliability numbers for core 0. */
 
-    Rmodel rmodel(new EM_model());
-    long double timestamp_h = 0;  // Current time in hours.
-    for (auto sample : temps) {
-        timestamp_h += ms_to_hour(1);  // sample rate is 1 ms.
-        long double core0_temperature = sample[0];
-        cout << "temp: " << core0_temperature;
-        cout << ", R: "
-             << rmodel.add_measurement(core0_temperature, timestamp_h) << endl;
+    Rmodel rmodel(new EM_model());  // We use the EM failure model
+    long double timestamp_h = 0;    // Current time in hours.
+    const long double sample_rate = ms_to_hour(1);  // sample rate is 1 ms.
+    long double R = 1.0 ; // new processor reliability.
+    long long sample_count = 0;
+    while (R > 0.1) {
+        for (auto sample : temps) { // reuse of short temperature trace.
+            timestamp_h += sample_rate;
+            sample_count++;
+            long double core0_temperature = sample[0];
+            R = rmodel.add_measurement(core0_temperature, timestamp_h);
+            if (sample_count % 10000 == 0) {
+                cout << "time: " << timestamp_h << " temp: " << core0_temperature << ", R: " << R << endl;
+            }
+        }
     }
+    cout << "Processor failed after " << sample_count << " samples" << endl;
+    cout << "Which is " << sample_count * sample_rate << " seconds" << endl;
 
     return 0;
 }
-
