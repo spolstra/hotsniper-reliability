@@ -26,9 +26,8 @@ def em_model(temp):
 def weibull(t, temp):
     return np.exp(-1 * np.power(t / (em_model(temp)), BETA))
 
-# Calculate R for a time period of 5 days.
-# R reaches ~0.001 after 5 days
-ts = np.arange(0, 5 * 24 * 60 * 60, 3000)
+# R reaches ~0.01 after 431000 hours (~49 years)
+ts = np.arange(0, 24 * 365 * 50, 3000)
 rs = weibull(ts, 50)  # temperature fixed at 50 degress celsius
 d = {"time": ts, "R": rs}
 data = pd.DataFrame(d)
