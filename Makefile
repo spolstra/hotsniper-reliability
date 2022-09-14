@@ -14,7 +14,7 @@ reliability: reliability.o
 
 plot: $(PROGS)
 	./reliability < constant-temperature.log > time-R.csv
-	python3 plot-r-data.py
+	python3 plot-both.py
 
 clean:
 	rm -f $(PROGS) *.o

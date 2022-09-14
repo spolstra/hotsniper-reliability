@@ -105,7 +105,7 @@ int main(void) {
 
     Rmodel rmodel(new EM_model());  // We use the EM failure model
     long double timestamp_h = 0;    // Current time in hours.
-    const long double sample_rate = ms_to_hour(100000);  // sample rate is 1 ms.
+    const long double sample_rate = ms_to_hour(1000000);  // rate is 1000s
     long double R = 1.0 ; // new processor reliability.
     long long sample_count = 0;
 
