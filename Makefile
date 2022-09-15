@@ -7,9 +7,9 @@ PROGS = reliability
 
 all: $(PROGS)
 
-reliability.o: reliability.cpp em_model.h wearout_model.h
+main.o: main.cpp reliability.h em_model.h wearout_model.h
 
-reliability: reliability.o
+reliability: main.o
 	$(CXX) -o $@ $(LDFLAGS) $^
 
 plot: $(PROGS)
