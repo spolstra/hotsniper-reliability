@@ -3,8 +3,6 @@
 
 #include "em_model.h"
 
-using namespace std;
-
 class Rmodel {
    public:
     /* We take ownership of alpha here. */
@@ -31,7 +29,7 @@ class Rmodel {
         current_time_stamp = new_time_stamp;
 
         if (delta_t < 0) {
-            throw runtime_error("Negative delta_t is not allowed");
+            throw std::runtime_error("Negative delta_t is not allowed");
         }
 
         // Add measurement to the stored 'current_sum': sum(T_j / alpha(T_j))
@@ -39,7 +37,7 @@ class Rmodel {
 
         long double new_R = exp(-1 * pow(current_sum, BETA));
         if (new_R > current_R) {
-            throw runtime_error("Reliability cannot increase over time");
+            throw std::runtime_error("Reliability cannot increase over time");
         }
         current_R = new_R;
         // std::cerr << "sum: " << current_sum << std::endl;

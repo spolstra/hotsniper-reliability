@@ -3,8 +3,9 @@
 #include <string>
 #include <vector>
 
-
 #include "reliability.h"
+
+using namespace std;
 
 /* Read HotSniper temperature log file. */
 vector<vector<long double>> read_temps(void) {
