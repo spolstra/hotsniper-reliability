@@ -96,6 +96,7 @@ void print_temps(vector<vector<long double>> temps) {
 
 /* Convert milliseconds to hours. */
 constexpr long double ms_to_hour(long double t) { return t / (60 * 60 * 1000); }
+constexpr long double hour_to_year(long double t) { return t / (24 * 365); }
 
 int main(void) {
     auto temps = read_temps();
@@ -110,7 +111,8 @@ int main(void) {
     long long sample_count = 0;
 
     cout << "time,R" << endl;
-    while (R > 0.001) {
+    const double long R_limit = 0.01;
+    while (R > R_limit) {
         for (auto sample : temps) { // reuse of short temperature trace.
             timestamp_h += sample_rate;
             sample_count++;
@@ -121,5 +123,7 @@ int main(void) {
             }
         }
     }
+
+    cerr << "R <= " << R_limit << " after " << hour_to_year(timestamp_h) << endl;
     return 0;
 }

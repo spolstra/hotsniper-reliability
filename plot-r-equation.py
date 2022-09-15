@@ -8,9 +8,14 @@ import matplotlib.pyplot as plt
 
 # The same constants and parameters as in reliability.cpp and em_model.h
 ACTIVATIONENERGY = 0.48
+# ACTIVATIONENERGY = 0.8  # From JEDEC page 5.
+
 BOLTZMANCONSTANT = 8.6173324 * 0.00001
 CONST_JMJCRIT = 1500000
+
 CONST_N = 1.1
+# CONST_N = 2.0  # From JEDEC page 5.
+
 CONST_ERRF = 0.88623  # math.gamma(1 + 1/BETA)
 CONST_A0 = 30000  # cross section = 1um^2  material constant = 3*10^13
 BETA = 2
