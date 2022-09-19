@@ -34,6 +34,7 @@ class Rmodel {
 
         // Add measurement to the stored 'current_sum': sum(T_j / alpha(T_j))
         current_sum += delta_t / (*alpha)(temp);
+        // std::cout << " current_sum: " << current_sum << std::endl;
 
         long double new_R = exp(-1 * pow(current_sum, BETA));
         if (new_R > current_R) {

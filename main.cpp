@@ -50,7 +50,7 @@ int main(void) {
 
     Rmodel rmodel(new EM_model());  // We use the EM failure model
     long double timestamp_h = 0;    // Current time in hours.
-    const long double sample_rate = ms_to_hour(1000000);  // rate is 1000s
+    const long double sample_rate = ms_to_hour(1);
     long double R = 1.0 ; // new processor reliability.
     long long sample_count = 0;
 
@@ -62,7 +62,7 @@ int main(void) {
             sample_count++;
             long double core0_temperature = sample[0];
             R = rmodel.add_measurement(core0_temperature, timestamp_h);
-            if (sample_count % 10000 == 0) {
+            if (sample_count % 1000000 == 0) {
                 cout << timestamp_h << ", " << R << endl;
             }
         }
