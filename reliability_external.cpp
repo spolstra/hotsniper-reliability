@@ -1,13 +1,18 @@
-#include <iostream>
+#include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <regex>
 
 #include "reliability.h"
 
 using namespace std;
+
+// TODO: How do we make sure that we are not working on stale partial sum
+//       data. Data that is left over from a previous run? I don't see an
+//       easy way to check this from this program.
 
 /* Calculate the current R value for all cores.
  * Inputs:
@@ -23,7 +28,6 @@ using namespace std;
  * ./reliability_external <delta_t> <hotspot_data> <current_sums> <r_values>
  */
 
-
 /* Read HotSniper temperature log file.
  * Returns a vector with all the core temperatures C0..Cn */
 vector<long double> read_temps(string hotspot_file) {
@@ -32,7 +36,7 @@ vector<long double> read_temps(string hotspot_file) {
         throw runtime_error("Cannot open the hotspot file: " + hotspot_file);
     }
 
-    regex core_pattern {R"(^C\d+)"};
+    regex core_pattern{R"(^C\d+)"};
     vector<long double> core_temperatures;
     string line;
 
@@ -69,7 +73,8 @@ vector<long double> read_current_sums(string current_sums_file) {
 
     ifstream current_sums_stream(current_sums_file);
     if (!current_sums_stream) {
-        throw runtime_error("Cannot open the current sum file: " + current_sums_file);
+        throw runtime_error("Cannot open the current sum file: " +
+                            current_sums_file);
     }
 
     string line;
@@ -95,29 +100,52 @@ void print_vector(vector<long double> data) {
 /* Conversion functions */
 constexpr long double ms_to_hour(long double t) { return t / (60 * 60 * 1000); }
 
-constexpr long double ns_to_hour(long double t) { return t / (static_cast<long double>(60L * 60L * 1000000000L)); }
+constexpr long double ns_to_hour(long double t) {
+    return t / (static_cast<long double>(60L * 60L * 1000000000L));
+}
 
 constexpr long double hour_to_year(long double t) { return t / (24 * 365); }
 
-
 int main(int argc, char *argv[]) {
     /* Handle command line inputs. */
-    if (argc != 4) {
-        cerr << "Usage: " << argv[0] << " <delta_t> <hotspot_file> <current_sums_file>" << endl;
+    if (argc != 5) {
+        cerr << "Usage: " << argv[0]
+             << " <delta_t> <hotspot_file> <current_sums_file> <r-values>"
+             << endl;
         return 1;
     }
+    char *temperature_filename = argv[2];
+    char *sum_filename = argv[3];
+    char *r_values_filename = argv[4];
+
     long double delta_t = ns_to_hour(stold(argv[1]));  // Delta t in hours.
-    vector<long double> temperatures = read_temps(argv[2]);
-    vector<long double> current_sums = read_current_sums(argv[3]);
+    vector<long double> temperatures = read_temps(temperature_filename);
+
+    vector<long double> current_sums;
+    if (filesystem::exists(sum_filename)) {
+        current_sums = read_current_sums(sum_filename);
+    } else { // if sums file does not exist initialize sums to 0.
+        if (filesystem::exists(r_values_filename)) {
+            throw runtime_error("R values file exists but sums file does not!");
+        }
+        current_sums.insert(current_sums.begin(), temperatures.size(), 0.0);
+    }
+
+    // TODO only do core0 here.
+    Rmodel rmodel(new EM_model(), current_sums[0]);  // We use the EM failure model
+    rmodel.add_measurement_delta(temperatures[0], delta_t);
+    cout << rmodel.get_R() << endl;
+    cout << rmodel.get_sum() << endl;
 
     print_vector(temperatures);
     print_vector(current_sums);
+
 
     return 0;
 
     /* Calculate reliability numbers for core 0. */
 
- #if 0
+#if 0
     Rmodel rmodel(new EM_model());  // We use the EM failure model
     long double timestamp_h = 0;    // Current time in hours.
     const long double sample_rate = ms_to_hour(1);
@@ -141,5 +169,4 @@ int main(int argc, char *argv[]) {
     cerr << "R <= " << R_limit << " after " << hour_to_year(timestamp_h) << endl;
     return 0;
 #endif
-
 }

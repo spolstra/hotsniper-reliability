@@ -9,6 +9,8 @@ class Rmodel {
     Rmodel(Wearout_model *alpha)
         : current_R(1), current_time_stamp(0), current_sum(0), alpha(alpha){};
 
+    Rmodel(Wearout_model *alpha, long double sum)
+        : current_R(1), current_time_stamp(0), current_sum(sum), alpha(alpha){};
     ~Rmodel(void) {
         delete alpha; /* We own alpha, so we need to free it here. */
     };
@@ -24,10 +26,17 @@ class Rmodel {
        of Multicore Systems" 2014 by Cristiana Bolchini et al.
        [2] : "System-level reliability modeling for MPSoCs" by Yan Xiang.
        */
+
+    /* Add a measurement using an absolute time stamp.
+     * The delta_t is calculated using current time stamp. */
     long double add_measurement(long double temp, long double new_time_stamp) {
         long double delta_t = new_time_stamp - current_time_stamp;
         current_time_stamp = new_time_stamp;
+        return add_measurement_delta(temp, delta_t);
+    }
 
+    /* Add a measurement with temperature temp over the period delta_t */
+    long double add_measurement_delta(long double temp, long double delta_t) {
         if (delta_t < 0) {
             throw std::runtime_error("Negative delta_t is not allowed");
         }
@@ -46,6 +55,7 @@ class Rmodel {
     }
 
     long double get_R(void) { return current_R; }
+    long double get_sum(void) { return current_sum; }
 
    private:
     long double current_R;
