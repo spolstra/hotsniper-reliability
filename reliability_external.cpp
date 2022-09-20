@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <experimental/iterator>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -75,7 +77,7 @@ vector<long double> read_current_sums(string sum_filename,
                                       size_t num_temperatures) {
     vector<long double> current_sums;
 
-    /* Read current sums from file and perfom some sanity checking. */
+    /* Open current sums file and perfom some sanity checking. */
     if (!filesystem::exists(sum_filename)) {
         // If sums file does not exist return a vector with zeros.
         if (filesystem::exists(r_values_filename)) {
@@ -84,19 +86,14 @@ vector<long double> read_current_sums(string sum_filename,
         current_sums.insert(current_sums.begin(), num_temperatures, 0.0);
         return current_sums;
     }
-    if (current_sums.size() != num_temperatures) {
-        throw runtime_error(
-            "The number of temperature values does not match the number of "
-            "current sums");
-    }
 
     ifstream current_sums_stream(sum_filename);
     if (!current_sums_stream) {
-        throw runtime_error("Cannot open the current sum file: " +
+        throw runtime_error("Error opening the current sum file: " +
                             sum_filename);
     }
 
-    /* Finally read the current sum data from file and return it. */
+    /* Finally read the current sum data from file. */
     string line;
     getline(current_sums_stream, line);
     stringstream strline(line);
@@ -104,24 +101,42 @@ vector<long double> read_current_sums(string sum_filename,
     while (strline >> current_sum) {
         current_sums.push_back(stold(current_sum));
     }
+
+    if (current_sums.size() != num_temperatures) {
+        throw runtime_error(
+            "The number of temperature values does not match the number of "
+            "current sums");
+    }
+
     return current_sums;
 }
 
 /* Write latest sums to 'sum_filename'. */
 void write_current_sums(const vector<Rmodel> &r_models, string sum_filename) {
     ofstream sum_file(sum_filename);
+
+    vector<long double> values;
     for (const Rmodel &r_model : r_models) {
-        sum_file << r_model.get_sum() << " ";
+        values.push_back(r_model.get_sum());
     }
+
+    std::copy(std::cbegin(values), std::cend(values),
+              std::experimental::make_ostream_joiner(sum_file, " "));
     sum_file << endl;
 }
 
 /* Write the latest r-values to 'r_value_filename'. */
 void write_r_values(const vector<Rmodel> &r_models, string r_values_filename) {
     ofstream r_values_file(r_values_filename);
+
+    vector<long double> values;
     for (const Rmodel &r_model : r_models) {
-        r_values_file << r_model.get_R() << " ";
+        values.push_back(r_model.get_R());
     }
+
+    std::copy(std::cbegin(values), std::cend(values),
+              std::experimental::make_ostream_joiner(r_values_file, " "));
+
     r_values_file << endl;
 }
 
@@ -157,8 +172,8 @@ int main(int argc, char *argv[]) {
 
     /* Read temperature and current sums from file. */
     vector<long double> temperatures = read_temps(temperature_filename);
-    vector<long double> current_sums = read_current_sums(
-        sum_filename, r_values_filename, temperatures.size());
+    vector<long double> current_sums =
+        read_current_sums(sum_filename, r_values_filename, temperatures.size());
 
     /* Create reliability models for all cores and initialize them with the
      * corresponding current sum. */
