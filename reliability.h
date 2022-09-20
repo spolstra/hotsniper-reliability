@@ -11,6 +11,13 @@ class Rmodel {
 
     Rmodel(Wearout_model *alpha, long double sum)
         : current_R(1), current_time_stamp(0), current_sum(sum), alpha(alpha){};
+
+    Rmodel(const Rmodel &o)
+        : current_R(o.current_R),
+          current_time_stamp(o.current_time_stamp),
+          current_sum(o.current_sum),
+          alpha(o.alpha->clone()) { }
+
     ~Rmodel(void) {
         delete alpha; /* We own alpha, so we need to free it here. */
     };

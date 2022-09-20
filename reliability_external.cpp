@@ -111,7 +111,7 @@ vector<long double> read_current_sums(string sum_filename,
 void write_current_sums(const vector<Rmodel> &r_models, string sum_filename) {
     ofstream sum_file(sum_filename);
     for (const Rmodel &r_model : r_models) {
-        sum_file << r_model.get_sum();
+        sum_file << r_model.get_sum() << " ";
     }
     sum_file << endl;
 }
@@ -120,7 +120,7 @@ void write_current_sums(const vector<Rmodel> &r_models, string sum_filename) {
 void write_r_values(const vector<Rmodel> &r_models, string r_values_filename) {
     ofstream r_values_file(r_values_filename);
     for (const Rmodel &r_model : r_models) {
-        r_values_file << r_model.get_R();
+        r_values_file << r_model.get_R() << " ";
     }
     r_values_file << endl;
 }

@@ -7,6 +7,8 @@ class EM_model : public Wearout_model {
     EM_model(void){};
     ~EM_model(void){};
 
+    Wearout_model *clone(void) override { return new EM_model(); }
+
     /* Wearout scale function for the EM fault model.
      *  temp in celsius. */
     long double operator()(long double temp) override {
