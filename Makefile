@@ -1,4 +1,4 @@
-.PHONY: all plot
+.PHONY: all plot run_ext
 
 CXX = clang++-12
 
@@ -28,6 +28,9 @@ plot: $(PROGS)
 
 run: $(PROGS)
 	./reliability < constant-temperature.log
+
+run_ext: $(PROGS)
+	./reliability_external 1 hotspot-sample-output.txt sums.txt rvalues.txt
 
 clean:
 	rm -f $(PROGS) *.o

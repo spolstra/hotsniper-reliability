@@ -54,8 +54,8 @@ class Rmodel {
         return new_R;
     }
 
-    long double get_R(void) { return current_R; }
-    long double get_sum(void) { return current_sum; }
+    long double get_R(void) const { return current_R; }
+    long double get_sum(void) const { return current_sum; }
 
    private:
     long double current_R;

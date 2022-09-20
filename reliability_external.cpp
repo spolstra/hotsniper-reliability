@@ -14,9 +14,11 @@ using namespace std;
 //       data. Data that is left over from a previous run? I don't see an
 //       easy way to check this from this program.
 
+// TODO: Abstract all the EM model specific stuff as much as possible.
+
 /* Calculate the current R value for all cores.
  * Inputs:
- * - The delta t since the last measurement in nano seconds.
+ * - The delta t since the last measurement in milliseconds.
  * - Hotspot temperature file <hotspot_data> for the current core temperatures.
  * - File <current_sums> containing the current sums of dt/a(T) for all cores.
  *
@@ -63,30 +65,64 @@ vector<long double> read_temps(string hotspot_file) {
     return core_temperatures;
 }
 
-/* Read current sums from current_sums_file.
+/* Read current sums from 'sum_filename'.
  * The format is a single line with the sums separated by whitespace:
  * sum_0 sum_1 ... sum_n
  *
  * Returns: a vector with the current sums of cores C0..Cn.  */
-vector<long double> read_current_sums(string current_sums_file) {
+vector<long double> read_current_sums(string sum_filename,
+                                      string r_values_filename,
+                                      size_t num_temperatures) {
     vector<long double> current_sums;
 
-    ifstream current_sums_stream(current_sums_file);
-    if (!current_sums_stream) {
-        throw runtime_error("Cannot open the current sum file: " +
-                            current_sums_file);
+    /* Read current sums from file and perfom some sanity checking. */
+    if (!filesystem::exists(sum_filename)) {
+        // If sums file does not exist return a vector with zeros.
+        if (filesystem::exists(r_values_filename)) {
+            throw runtime_error("R values file exists but sums file does not!");
+        }
+        current_sums.insert(current_sums.begin(), num_temperatures, 0.0);
+        return current_sums;
+    }
+    if (current_sums.size() != num_temperatures) {
+        throw runtime_error(
+            "The number of temperature values does not match the number of "
+            "current sums");
     }
 
+    ifstream current_sums_stream(sum_filename);
+    if (!current_sums_stream) {
+        throw runtime_error("Cannot open the current sum file: " +
+                            sum_filename);
+    }
+
+    /* Finally read the current sum data from file and return it. */
     string line;
     getline(current_sums_stream, line);
     stringstream strline(line);
-
     string current_sum;
     while (strline >> current_sum) {
         current_sums.push_back(stold(current_sum));
     }
-
     return current_sums;
+}
+
+/* Write latest sums to 'sum_filename'. */
+void write_current_sums(const vector<Rmodel> &r_models, string sum_filename) {
+    ofstream sum_file(sum_filename);
+    for (const Rmodel &r_model : r_models) {
+        sum_file << r_model.get_sum();
+    }
+    sum_file << endl;
+}
+
+/* Write the latest r-values to 'r_value_filename'. */
+void write_r_values(const vector<Rmodel> &r_models, string r_values_filename) {
+    ofstream r_values_file(r_values_filename);
+    for (const Rmodel &r_model : r_models) {
+        r_values_file << r_model.get_R();
+    }
+    r_values_file << endl;
 }
 
 /* Dump temperature measurements. */
@@ -107,7 +143,7 @@ constexpr long double ns_to_hour(long double t) {
 constexpr long double hour_to_year(long double t) { return t / (24 * 365); }
 
 int main(int argc, char *argv[]) {
-    /* Handle command line inputs. */
+    /* Handle command line arguments. */
     if (argc != 5) {
         cerr << "Usage: " << argv[0]
              << " <delta_t> <hotspot_file> <current_sums_file> <r-values>"
@@ -117,56 +153,31 @@ int main(int argc, char *argv[]) {
     char *temperature_filename = argv[2];
     char *sum_filename = argv[3];
     char *r_values_filename = argv[4];
+    long double delta_t = ms_to_hour(stold(argv[1]));  // Delta t in hours.
 
-    long double delta_t = ns_to_hour(stold(argv[1]));  // Delta t in hours.
+    /* Read temperature and current sums from file. */
     vector<long double> temperatures = read_temps(temperature_filename);
+    vector<long double> current_sums = read_current_sums(
+        sum_filename, r_values_filename, temperatures.size());
 
-    vector<long double> current_sums;
-    if (filesystem::exists(sum_filename)) {
-        current_sums = read_current_sums(sum_filename);
-    } else { // if sums file does not exist initialize sums to 0.
-        if (filesystem::exists(r_values_filename)) {
-            throw runtime_error("R values file exists but sums file does not!");
-        }
-        current_sums.insert(current_sums.begin(), temperatures.size(), 0.0);
+    /* Create reliability models for all cores and initialize them with the
+     * corresponding current sum. */
+    vector<Rmodel> r_models;
+    for (long double s : current_sums) {
+        r_models.push_back(Rmodel(new EM_model(), s));
     }
 
-    // TODO only do core0 here.
-    Rmodel rmodel(new EM_model(), current_sums[0]);  // We use the EM failure model
-    rmodel.add_measurement_delta(temperatures[0], delta_t);
-    cout << rmodel.get_R() << endl;
-    cout << rmodel.get_sum() << endl;
-
-    print_vector(temperatures);
-    print_vector(current_sums);
-
-
-    return 0;
-
-    /* Calculate reliability numbers for core 0. */
-
-#if 0
-    Rmodel rmodel(new EM_model());  // We use the EM failure model
-    long double timestamp_h = 0;    // Current time in hours.
-    const long double sample_rate = ms_to_hour(1);
-    long double R = 1.0 ; // new processor reliability.
-    long long sample_count = 0;
-
-    cout << "time,R" << endl;
-    const double long R_limit = 0.01;
-    while (R > R_limit) {
-        for (auto sample : temps) { // reuse of short temperature trace.
-            timestamp_h += sample_rate;
-            sample_count++;
-            long double core0_temperature = sample[0];
-            R = rmodel.add_measurement(core0_temperature, timestamp_h);
-            if (sample_count % 1000000 == 0) {
-                cout << timestamp_h << ", " << R << endl;
-            }
-        }
+    /* Update rmodels of cores with the latest temperature measurement. */
+    for (auto it = r_models.begin(); it != r_models.end(); ++it) {
+        it->add_measurement_delta(
+                temperatures[distance(r_models.begin(), it)], delta_t);
     }
 
-    cerr << "R <= " << R_limit << " after " << hour_to_year(timestamp_h) << endl;
+    /*  Write back the updated current_sums of the rmodels. */
+    write_current_sums(r_models, sum_filename);
+
+    /* Write new r values to file. */
+    write_r_values(r_models, r_values_filename);
+
     return 0;
-#endif
 }
