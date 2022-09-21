@@ -32,8 +32,13 @@ using namespace std;
  * ./reliability_external <delta_t> <hotspot_data> <current_sums> <r_values>
  */
 
-/* Read HotSniper temperature log file.
- * Returns a vector with all the core temperatures C0..Cn */
+
+const long double ZERO_CEL_IN_KELVIN = 273.15;
+long double kelvin_to_celsius(long double temp) { return temp - ZERO_CEL_IN_KELVIN; }
+
+/* Read Hotspot temperature log file.
+ * Hotspot outputs the temperature in Kelvin so we need to convert to celsius
+ * Returns a vector with all the core temperatures C0..Cn in celsius. */
 vector<long double> read_temps(string hotspot_file) {
     ifstream hotspot(hotspot_file);
     if (!hotspot) {
@@ -61,7 +66,7 @@ vector<long double> read_temps(string hotspot_file) {
         }
 
         strline >> core_temperature;
-        core_temperatures.push_back(stold(core_temperature));
+        core_temperatures.push_back(kelvin_to_celsius(stold(core_temperature) ));
     }
 
     return core_temperatures;
@@ -161,7 +166,7 @@ int main(int argc, char *argv[]) {
     /* Handle command line arguments. */
     if (argc != 5) {
         cerr << "Usage: " << argv[0]
-             << " <delta_t> <hotspot_file> <current_sums_file> <r-values>"
+             << " <delta_t (ms)> <hotspot_file> <current_sums_file> <r-values>"
              << endl;
         return 1;
     }
