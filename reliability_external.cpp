@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "reliability.h"
 
@@ -117,12 +118,12 @@ vector<long double> read_current_sums(string sum_filename,
 }
 
 /* Write latest sums to 'sum_filename'. */
-void write_current_sums(const vector<Rmodel> &r_models, string sum_filename) {
+void write_current_sums(const vector<shared_ptr<Rmodel>> r_models, string sum_filename) {
     ofstream sum_file(sum_filename);
 
     vector<long double> values;
-    for (const Rmodel &r_model : r_models) {
-        values.push_back(r_model.get_sum());
+    for (const shared_ptr<Rmodel> &r_model : r_models) {
+        values.push_back(r_model->get_sum());
     }
 
     std::copy(std::cbegin(values), std::cend(values),
@@ -131,12 +132,12 @@ void write_current_sums(const vector<Rmodel> &r_models, string sum_filename) {
 }
 
 /* Write the latest r-values to 'r_value_filename'. */
-void write_r_values(const vector<Rmodel> &r_models, string r_values_filename) {
+void write_r_values(const vector<shared_ptr<Rmodel>> r_models, string r_values_filename) {
     ofstream r_values_file(r_values_filename);
 
     vector<long double> values;
-    for (const Rmodel &r_model : r_models) {
-        values.push_back(r_model.get_R());
+    for (const shared_ptr<Rmodel> &r_model : r_models) {
+        values.push_back(r_model->get_R());
     }
 
     std::copy(std::cbegin(values), std::cend(values),
@@ -182,14 +183,14 @@ int main(int argc, char *argv[]) {
 
     /* Create reliability models for all cores and initialize them with the
      * corresponding current sum. */
-    vector<Rmodel> r_models;
+    vector<shared_ptr<Rmodel>> r_models;
     for (long double s : current_sums) {
-        r_models.push_back(Rmodel(new EM_model(), s));
+        r_models.push_back(make_shared<Rmodel>(new EM_model(), s));
     }
 
     /* Update rmodels of cores with the latest temperature measurement. */
     for (auto it = r_models.begin(); it != r_models.end(); ++it) {
-        it->add_measurement_delta(
+        (*it)->add_measurement_delta(
                 temperatures[distance(r_models.begin(), it)], delta_t);
     }
 
