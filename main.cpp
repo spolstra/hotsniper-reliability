@@ -53,7 +53,6 @@ int main(void) {
     const long double sample_rate = ms_to_hour(100'000);
     long double R = 1.0 ; // new processor reliability.
     long long sample_count = 0;
-    long double area = 0;
 
     cout << "time,R" << endl;
     const double long R_limit = 0.01;
@@ -66,11 +65,10 @@ int main(void) {
             if (sample_count % 100'000 == 0) {
                 cout << timestamp_h << ", " << R << endl;
             }
-            area += sample_rate * R;
         }
     }
 
     cerr << "R <= " << R_limit << " after " << hour_to_year(timestamp_h) << " years" << endl;
-    cerr << "Area under curve: " << hour_to_year(area) << " years" << endl;
+    cerr << "Area under curve: " << hour_to_year(rmodel.get_area()) << " years" << endl;
     return 0;
 }

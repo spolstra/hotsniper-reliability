@@ -7,10 +7,12 @@ class Rmodel {
    public:
     /* We take ownership of alpha here. */
     Rmodel(Wearout_model *alpha)
-        : current_R(1), current_time_stamp(0), current_sum(0), alpha(alpha){};
+        : current_R(1), current_time_stamp(0), current_sum(0),
+        area_under_curve(0), alpha(alpha){};
 
     Rmodel(Wearout_model *alpha, long double sum)
-        : current_R(1), current_time_stamp(0), current_sum(sum), alpha(alpha){};
+        : current_R(1), current_time_stamp(0), current_sum(sum),
+        area_under_curve(0), alpha(alpha){};
 
     Rmodel(const Rmodel &o)
         : current_R(o.current_R),
@@ -56,18 +58,21 @@ class Rmodel {
         if (new_R > current_R) {
             throw std::runtime_error("Reliability cannot increase over time");
         }
+        area_under_curve += new_R * delta_t;
         current_R = new_R;
-        // std::cerr << "sum: " << current_sum << std::endl;
         return new_R;
     }
 
     long double get_R(void) const { return current_R; }
     long double get_sum(void) const { return current_sum; }
+    long double get_area(void) const { return area_under_curve; }
 
    private:
     long double current_R;
     long double current_time_stamp;
     long double current_sum;
+    long double area_under_curve;
+
     Wearout_model *alpha;
 
     const long double BETA = 2;  // weibull scaling parameter
