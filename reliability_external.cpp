@@ -1,6 +1,5 @@
 #include <algorithm>
-#include <experimental/iterator>
-#include <filesystem>
+// #include <filesystem> // Not available in C++11
 #include <fstream>
 #include <iostream>
 #include <regex>
@@ -33,6 +32,13 @@ using namespace std;
  * ./reliability_external <delta_t> <hotspot_data> <current_sums> <r_values>
  */
 
+/* Check if file 'name' exists.
+ * Return true if it does, false otherwise.
+ * Cannot use filesystem::exists() because need to use c++11. */
+inline bool file_exists(const string &name) {
+    ifstream f(name);
+    return f.good();
+}
 
 const long double ZERO_CEL_IN_KELVIN = 273.15;
 long double kelvin_to_celsius(long double temp) { return temp - ZERO_CEL_IN_KELVIN; }
@@ -73,6 +79,31 @@ vector<long double> read_temps(string hotspot_file) {
     return core_temperatures;
 }
 
+vector<long double> read_instantaneous_temps(string inst_temp_filename) {
+    /* Open temperatures file. */
+    ifstream temperatures(inst_temp_filename);
+    if (!temperatures) {
+        throw runtime_error("Cannot open the instantaneous temperature file: " + inst_temp_filename);
+    }
+
+    /* Check header. */
+    string line;
+    getline(temperatures, line);
+    if (line.find("Core0-TP") == string::npos) {
+        throw runtime_error("Missing header in instantaneous temperature file");
+    }
+
+    /* Read core temperatures. */
+    vector<long double> core_temperatures;
+    string temperature;
+    while (temperatures >> temperature) {
+        core_temperatures.push_back(stold(temperature));
+    }
+
+    return core_temperatures;
+}
+
+
 /* Read current sums from 'sum_filename'.
  * The format is a single line with the sums separated by whitespace:
  * sum_0 sum_1 ... sum_n
@@ -84,9 +115,9 @@ vector<long double> read_current_sums(string sum_filename,
     vector<long double> current_sums;
 
     /* Open current sums file and perfom some sanity checking. */
-    if (!filesystem::exists(sum_filename)) {
+    if (!file_exists(sum_filename)) {
         // If sums file does not exist return a vector with zeros.
-        if (filesystem::exists(r_values_filename)) {
+        if (file_exists(r_values_filename)) {
             throw runtime_error("R values file exists but sums file does not!");
         }
         current_sums.insert(current_sums.begin(), num_temperatures, 0.0);
@@ -121,28 +152,24 @@ vector<long double> read_current_sums(string sum_filename,
 void write_current_sums(const vector<shared_ptr<Rmodel>> r_models, string sum_filename) {
     ofstream sum_file(sum_filename);
 
-    vector<long double> values;
+    bool first = true;
     for (const shared_ptr<Rmodel> &r_model : r_models) {
-        values.push_back(r_model->get_sum());
+        if (first) first = false; else sum_file << " ";
+        sum_file << r_model->get_sum();
     }
-
-    std::copy(std::cbegin(values), std::cend(values),
-              std::experimental::make_ostream_joiner(sum_file, " "));
     sum_file << endl;
+
 }
 
 /* Write the latest r-values to 'r_value_filename'. */
 void write_r_values(const vector<shared_ptr<Rmodel>> r_models, string r_values_filename) {
     ofstream r_values_file(r_values_filename);
 
-    vector<long double> values;
+    bool first = true;
     for (const shared_ptr<Rmodel> &r_model : r_models) {
-        values.push_back(r_model->get_R());
+        if (first) first = false; else r_values_file << " ";
+        r_values_file << r_model->get_R();
     }
-
-    std::copy(std::cbegin(values), std::cend(values),
-              std::experimental::make_ostream_joiner(r_values_file, " "));
-
     r_values_file << endl;
 }
 
@@ -177,7 +204,7 @@ int main(int argc, char *argv[]) {
     long double delta_t = ms_to_hour(stold(argv[1]));  // Delta t in hours.
 
     /* Read temperature and current sums from file. */
-    vector<long double> temperatures = read_temps(temperature_filename);
+    vector<long double> temperatures = read_instantaneous_temps(temperature_filename);
     vector<long double> current_sums =
         read_current_sums(sum_filename, r_values_filename, temperatures.size());
 
