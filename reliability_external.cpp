@@ -154,7 +154,7 @@ void write_current_sums(const vector<shared_ptr<Rmodel>> r_models, string sum_fi
 
     bool first = true;
     for (const shared_ptr<Rmodel> &r_model : r_models) {
-        if (first) first = false; else sum_file << " ";
+        if (first) first = false; else sum_file << "\t";
         sum_file << r_model->get_sum();
     }
     sum_file << endl;
@@ -167,7 +167,7 @@ void write_r_values(const vector<shared_ptr<Rmodel>> r_models, string r_values_f
 
     bool first = true;
     for (const shared_ptr<Rmodel> &r_model : r_models) {
-        if (first) first = false; else r_values_file << " ";
+        if (first) first = false; else r_values_file << "\t";
         r_values_file << r_model->get_R();
     }
     r_values_file << endl;

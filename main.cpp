@@ -32,7 +32,7 @@ vector<vector<long double>> read_temps(void) {
 void print_temps(vector<vector<long double>> temps) {
     for (const auto &sample : temps) {
         for (auto core_temp : sample) {
-            cout << core_temp << " ";
+            cout << core_temp << "\t";
         }
         cout << endl;
     }
