@@ -192,16 +192,21 @@ constexpr long double hour_to_year(long double t) { return t / (24 * 365); }
 
 int main(int argc, char *argv[]) {
     /* Handle command line arguments. */
-    if (argc != 5) {
+    if (argc < 5 || argc > 6) {
         cerr << "Usage: " << argv[0]
-             << " <delta_t (ms)> <hotspot_file> <current_sums_file> <r-values>"
-             << endl;
+             << " <delta_t (ms)> <hotspot_file> <current_sums_file> <r-values> [<acceleration_factor>]" << endl;
         return 1;
     }
     char *temperature_filename = argv[2];
     char *sum_filename = argv[3];
     char *r_values_filename = argv[4];
     long double delta_t = ms_to_hour(stold(argv[1]));  // Delta t in hours.
+    if (argc == 6) {
+        // Eg. speed up aging : 1000 * 60 * 60 * 24 * 100 = 8640_000_000
+        //                      |---- one day ----|
+        // Age with a delta of 100 days instead of 1ms
+        delta_t *= stoll(argv[5]);
+    }
 
     /* Read temperature and current sums from file. */
     vector<long double> temperatures = read_instantaneous_temps(temperature_filename);
