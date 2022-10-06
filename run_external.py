@@ -16,13 +16,16 @@ def ms_to_year(t):
 # cleanup
 subprocess.run("rm -f rvalues.txt sums.txt", shell=True, check=True)
 
-delta_t = 100_000_000  # sample time in ms
+# delta_t = 100_000_000  # sample time in ms
+# delta_t = 8640000000 # 100 days in ms
+delta_t = 21600000000 # 250 days in ms
+
 t = 0  # in ms
 r_limit = 0.01
 area = 0  # in hours
 
 while True:
-    subprocess.run("./reliability_external {} hotspot-sample-output.txt sums.txt rvalues.txt".format(delta_t), shell=True, check=True)
+    subprocess.run("./reliability_external {} constant-temperature.log sums.txt rvalues.txt".format(delta_t), shell=True, check=True)
     t += delta_t
     # if t % 1_000_000 == 0:
     with open('rvalues.txt') as f:
