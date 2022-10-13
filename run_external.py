@@ -29,7 +29,8 @@ while True:
     t += delta_t
     # if t % 1_000_000 == 0:
     with open('rvalues.txt') as f:
-        rvalue = float(f.read().split(' ')[0])
+        f.readline()  # read and ignore header
+        rvalue = float(f.readline().split('\t')[0])
         print(ms_to_hour(t), rvalue)
         area += rvalue * ms_to_hour(delta_t)
         if rvalue <= r_limit:

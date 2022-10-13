@@ -165,7 +165,16 @@ void write_current_sums(const vector<shared_ptr<Rmodel>> r_models, string sum_fi
 void write_r_values(const vector<shared_ptr<Rmodel>> r_models, string r_values_filename) {
     ofstream r_values_file(r_values_filename);
 
+    /* Write header */
     bool first = true;
+    for (size_t core_id = 0; core_id < r_models.size(); core_id++) {
+        if (first) first = false; else r_values_file << "\t";
+        r_values_file << "Core" << core_id;
+    }
+    r_values_file << endl;
+
+    /* Write rvalues */
+    first = true;
     for (const shared_ptr<Rmodel> &r_model : r_models) {
         if (first) first = false; else r_values_file << "\t";
         r_values_file << r_model->get_R();
