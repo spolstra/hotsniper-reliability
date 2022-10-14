@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <utility>
+#include <tuple>
 
 #include "reliability.h"
 
@@ -32,6 +34,15 @@ using namespace std;
  * ./reliability_external <delta_t> <hotspot_data> <current_sums> <r_values>
  */
 
+/* Conversion functions */
+constexpr long double ms_to_hour(long double t) { return t / (60 * 60 * 1000); }
+
+constexpr long double ns_to_hour(long double t) {
+    return t / (static_cast<long double>(60L * 60L * 1000000000L));
+}
+
+constexpr long double hour_to_year(long double t) { return t / (24 * 365); }
+
 /* Check if file 'name' exists.
  * Return true if it does, false otherwise.
  * Cannot use filesystem::exists() because need to use c++11. */
@@ -40,57 +51,23 @@ inline bool file_exists(const string &name) {
     return f.good();
 }
 
-const long double ZERO_CEL_IN_KELVIN = 273.15;
-long double kelvin_to_celsius(long double temp) { return temp - ZERO_CEL_IN_KELVIN; }
-
-/* Read Hotspot temperature log file.
- * Hotspot outputs the temperature in Kelvin so we need to convert to celsius
- * Returns a vector with all the core temperatures C0..Cn in celsius. */
-vector<long double> read_temps(string hotspot_file) {
-    ifstream hotspot(hotspot_file);
-    if (!hotspot) {
-        throw runtime_error("Cannot open the hotspot file: " + hotspot_file);
-    }
-
-    regex core_pattern{R"(^C\d+)"};
-    vector<long double> core_temperatures;
-    string line;
-
-    getline(hotspot, line);  // Check and then skip header
-    if (line.find("Unit") == string::npos) {
-        throw runtime_error("Missing header in temperature file");
-    }
-
-    while (getline(hotspot, line)) {
-        smatch results;
-        stringstream strline(line);
-        string core_name;
-        string core_temperature;
-
-        strline >> core_name;
-        if (!regex_search(core_name, results, core_pattern)) {
-            break;  // This not a core temperature, stop.
-        }
-
-        strline >> core_temperature;
-        core_temperatures.push_back(kelvin_to_celsius(stold(core_temperature) ));
-    }
-
-    return core_temperatures;
-}
-
-vector<long double> read_instantaneous_temps(string inst_temp_filename) {
+/* Read header and temperatures.
+ * Return a vector with the header names and a vector with the temperatures. */
+pair<vector<string>, vector<long double>> read_instantaneous_temps(string inst_temp_filename) {
     /* Open temperatures file. */
     ifstream temperatures(inst_temp_filename);
     if (!temperatures) {
         throw runtime_error("Cannot open the instantaneous temperature file: " + inst_temp_filename);
     }
 
-    /* Check header. */
-    string line;
-    getline(temperatures, line);
-    if (line.find("Core0-TP") == string::npos) {
-        throw runtime_error("Missing header in instantaneous temperature file");
+    /* Read header. */
+    vector<string> header;
+    string header_line;
+    string component_name;
+    getline(temperatures, header_line);
+    stringstream ss = stringstream(header_line);
+    while (ss >> component_name) {
+        header.push_back(component_name);
     }
 
     /* Read core temperatures. */
@@ -100,7 +77,7 @@ vector<long double> read_instantaneous_temps(string inst_temp_filename) {
         core_temperatures.push_back(stold(temperature));
     }
 
-    return core_temperatures;
+    return make_pair(header, core_temperatures);
 }
 
 
@@ -162,14 +139,15 @@ void write_current_sums(const vector<shared_ptr<Rmodel>> r_models, string sum_fi
 }
 
 /* Write the latest r-values to 'r_value_filename'. */
-void write_r_values(const vector<shared_ptr<Rmodel>> r_models, string r_values_filename) {
+void write_r_values(const vector<shared_ptr<Rmodel>> &r_models,
+        const vector<string> &header,string r_values_filename) {
     ofstream r_values_file(r_values_filename);
 
     /* Write header */
     bool first = true;
-    for (size_t core_id = 0; core_id < r_models.size(); core_id++) {
+    for (const string &comp : header) {
         if (first) first = false; else r_values_file << "\t";
-        r_values_file << "Core" << core_id;
+        r_values_file << comp;
     }
     r_values_file << endl;
 
@@ -190,15 +168,6 @@ void print_vector(vector<long double> data) {
     cout << endl;
 }
 
-/* Conversion functions */
-constexpr long double ms_to_hour(long double t) { return t / (60 * 60 * 1000); }
-
-constexpr long double ns_to_hour(long double t) {
-    return t / (static_cast<long double>(60L * 60L * 1000000000L));
-}
-
-constexpr long double hour_to_year(long double t) { return t / (24 * 365); }
-
 int main(int argc, char *argv[]) {
     /* Handle command line arguments. */
     if (argc < 5 || argc > 6) {
@@ -218,7 +187,9 @@ int main(int argc, char *argv[]) {
     }
 
     /* Read temperature and current sums from file. */
-    vector<long double> temperatures = read_instantaneous_temps(temperature_filename);
+    vector<long double> temperatures;
+    vector<string> header;
+    tie(header, temperatures) = read_instantaneous_temps(temperature_filename);
     vector<long double> current_sums =
         read_current_sums(sum_filename, r_values_filename, temperatures.size());
 
@@ -239,7 +210,7 @@ int main(int argc, char *argv[]) {
     write_current_sums(r_models, sum_filename);
 
     /* Write new r values to file. */
-    write_r_values(r_models, r_values_filename);
+    write_r_values(r_models, header, r_values_filename);
 
     return 0;
 }
