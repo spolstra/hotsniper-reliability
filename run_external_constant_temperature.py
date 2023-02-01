@@ -26,8 +26,8 @@ def ms_to_year(t):
 subprocess.run("rm -f rvalues.txt sums.txt", shell=True, check=True)
 
 # delta_t = 100_000_000  # sample time in ms
-# delta_t = 8640000000 # 100 days in ms
-delta_t = 21600000000 # 250 days in ms
+delta_t = 8640000000 # 100 days in ms
+#delta_t = 21600000000 # 250 days in ms
 
 t = 0  # in ms
 r_limit = 0.01
@@ -44,7 +44,9 @@ while True:
     with open('rvalues.txt') as f:
         f.readline()  # read and ignore header
         rvalues = list(map(float, f.readline().split('\t')))
-        print(ms_to_hour(t), ',', ', '.join(map(str, rvalues)))
+        #print(ms_to_hour(t), ',', ', '.join(map(str, rvalues)))
+        print(hour_to_year(ms_to_hour(t)), ',', ', '.join(map(str, rvalues)))
+
         area += rvalues[0] * ms_to_hour(delta_t)
         if min(rvalues) <= r_limit:
             break;
