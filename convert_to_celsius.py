@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from scipy.constants import convert_temperature
+
 import sys
 
 if len(sys.argv) != 2:
@@ -9,7 +11,7 @@ if len(sys.argv) != 2:
 temperature_file = sys.argv[1]
 
 def k_to_c(k):
-    return k - 273.15
+    return convert_temperature(k, 'Kelvin', 'Celsius')
 
 with open(temperature_file) as f:
     print(f.readline(), end='')  # Copy header
