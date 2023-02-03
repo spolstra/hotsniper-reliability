@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import sys
+from pathlib import Path
 
 if len(sys.argv) != 2:
     print('usage: {} r-value csv file'.format(sys.argv[0]))
@@ -20,9 +21,10 @@ df.plot(ax=axs)
 axs.set_ylabel('Reliability value')
 axs.set_xlabel('Time (years)')
 
-fig.savefig("rvalue-plot.pdf")
-fig.savefig("rvalue-plot.png")
-fig.savefig("rvalue-plot.eps")
+filename = Path(rvalue_file)
+fig.savefig(filename.with_suffix('.pdf'))
+fig.savefig(filename.with_suffix('.png'))
+fig.savefig(filename.with_suffix('.eps'))
 
 plt.show()
 
