@@ -54,7 +54,7 @@ class Rmodel {
         current_sum += delta_t / (*alpha)(temp);
         // std::cout << " current_sum: " << current_sum << std::endl;
 
-        long double new_R = exp(-1 * pow(current_sum, BETA));
+        long double new_R = expl(-1 * powl(current_sum, BETA));
         if (new_R > current_R) {
             throw std::runtime_error("Reliability cannot increase over time");
         }

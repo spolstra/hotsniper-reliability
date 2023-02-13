@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 #include <tuple>
+#include <limits>
 
 #include "reliability.h"
 
@@ -153,6 +154,8 @@ void write_r_values(const vector<shared_ptr<Rmodel>> &r_models,
 
     /* Write rvalues */
     first = true;
+
+    r_values_file.precision(std::numeric_limits<long double>::max_digits10);
     for (const shared_ptr<Rmodel> &r_model : r_models) {
         if (first) first = false; else r_values_file << "\t";
         r_values_file << r_model->get_R();
