@@ -2,10 +2,14 @@
 
 import subprocess
 import sys
+import os
 
 if len(sys.argv) != 2:
     print('usage: {} steady-state-temperatures-file-in-celsius'.format(sys.argv[0]))
     sys.exit(1)
+
+# Get the absolute path of the directory containing this script
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 temp_file = sys.argv[1]
 
@@ -37,8 +41,10 @@ area = 0  # in hours
 with open(temp_file) as tfile:
     print(','.join(['time'] + tfile.readline().split('\t')), end='')
 
+executable_path = os.path.join(script_dir, 'reliability_external')
+
 while True:
-    subprocess.run("./reliability_external {} {} sums.txt rvalues.txt".format(delta_t, temp_file), shell=True, check=True)
+    subprocess.run("{} {} {} sums.txt rvalues.txt".format(executable_path, delta_t, temp_file), shell=True, check=True)
     t += delta_t
     # if t % 1_000_000 == 0:
     with open('rvalues.txt') as f:
