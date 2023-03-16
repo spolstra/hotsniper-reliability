@@ -25,9 +25,9 @@ axs.set_ylabel('Reliability value')
 axs.set_xlabel('Time (years)')
 
 filename = Path(rvalue_file)
-fig.savefig(filename.with_suffix('.pdf'))
-fig.savefig(filename.with_suffix('.png'))
-fig.savefig(filename.with_suffix('.eps'))
+fig.savefig(str(filename.with_suffix('.pdf')))
+fig.savefig(str(filename.with_suffix('.png')))
+fig.savefig(str(filename.with_suffix('.eps')))
 
 if args.noplot == False:
     plt.show()
