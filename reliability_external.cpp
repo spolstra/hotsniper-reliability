@@ -12,6 +12,7 @@
 #include <limits>
 
 #include "rmodel.h"
+#include "em_model.h"
 
 using namespace std;
 
@@ -200,13 +201,12 @@ int main(int argc, char *argv[]) {
      * corresponding current sum. */
     vector<shared_ptr<Rmodel>> r_models;
     for (long double s : current_sums) {
-        r_models.push_back(make_shared<Rmodel>(new EM_model(), s));
+        r_models.push_back(make_shared<EM_model>(s));
     }
 
     /* Update rmodels of cores with the latest temperature measurement. */
     for (auto it = r_models.begin(); it != r_models.end(); ++it) {
-        (*it)->add_measurement_delta(
-                temperatures[distance(r_models.begin(), it)], delta_t);
+        (*it)->update(delta_t, temperatures[distance(r_models.begin(), it)]);
     }
 
     /*  Write back the updated current_sums of the rmodels. */

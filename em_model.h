@@ -1,29 +1,53 @@
 #include <cmath>
 
-#include "wearout_model.h"
+class EM_model : public Rmodel {
+    using Rmodel::Rmodel;
 
-class EM_model : public Wearout_model {
    public:
-    EM_model(void){};
-    ~EM_model(void){};
+    void update(long double delta_t, long double temperature) {
+        if (delta_t < 0) {
+            throw std::runtime_error("Negative delta_t is not allowed");
+        }
 
-    Wearout_model *clone(void) override { return new EM_model(); }
+    /* Calculate the new R value.
+     * temp in celsius
+     * new_time_stamp in ms
+
+       We use equation (5) from the paper [1] (equation (11) in [2]):
+       R(t) = exp(-pow((sum(T_j / alpha(T_j))), beta))
+
+       [1] : "Lightweight and Open-source Framework for the Lifetime Estimation
+       of Multicore Systems" 2014 by Cristiana Bolchini et al.
+       [2] : "System-level reliability modeling for MPSoCs" by Yan Xiang.
+       */
+
+        // Add measurement to the stored 'current_sum': sum(T_j / alpha(T_j))
+        current_sum += delta_t / alpha(temperature);
+
+        long double new_R = expl(-1 * powl(current_sum, BETA));
+        if (new_R > current_R) {
+            throw std::runtime_error("Reliability cannot increase over time");
+        }
+        area_under_curve += new_R * delta_t;
+        current_R = new_R;
+    }
+
+   private:
 
     /* Wearout scale function for the EM fault model.
      *  temp in celsius. */
-    long double operator()(long double temp) override {
+    long double alpha(long double temp) {
         long double temp_kelvin = celsius_to_kelvin(temp);
         return (CONST_A0 * pow(CONST_JMJCRIT, -CONST_N) *
                 exp(ACTIVATIONENERGY / (BOLTZMANCONSTANT * temp_kelvin))) /
                CONST_ERRF;
     }
 
-   private:
     long double celsius_to_kelvin(long double temp) { return temp + ZERO_CEL_IN_KELVIN; }
 
     // Electro-Migration related parameters
 
-    // const long double BETA = 2; // weibull scaling parameter (for CONST_ERRF)
+    const long double BETA = 2; // weibull scaling parameter (for CONST_ERRF)
     const long double ACTIVATIONENERGY = 0.48;
     // const long double ACTIVATIONENERGY = 0.8;  // From JEDEC page 5.
     const long double BOLTZMANCONSTANT = 8.6173324 * 0.00001;
