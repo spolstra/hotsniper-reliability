@@ -11,7 +11,7 @@
 #include <tuple>
 #include <limits>
 
-#include "reliability.h"
+#include "rmodel.h"
 
 using namespace std;
 

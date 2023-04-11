@@ -12,7 +12,7 @@ PROGS = reliability reliability_external
 
 all: $(PROGS)
 
-main.o: main.cpp reliability.h em_model.h wearout_model.h
+main.o: main.cpp rmodel.h em_model.h wearout_model.h
 
 reliability_external.o: reliability_external.cpp em_model.h wearout_model.h
 

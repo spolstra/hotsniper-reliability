@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "reliability.h"
+#include "rmodel.h"
 
 using namespace std;
 
