@@ -21,10 +21,10 @@ class EM_model : public Rmodel {
        [2] : "System-level reliability modeling for MPSoCs" by Yan Xiang.
        */
 
-        // Add measurement to the stored 'current_sum': sum(T_j / alpha(T_j))
-        current_sum += delta_t / alpha(temperature);
+        // Add measurement to the stored 'current_state': sum(T_j / alpha(T_j))
+        current_state += delta_t / alpha(temperature);
 
-        long double new_R = expl(-1 * powl(current_sum, BETA));
+        long double new_R = expl(-1 * powl(current_state, BETA));
         if (new_R > current_R) {
             throw std::runtime_error("Reliability cannot increase over time");
         }

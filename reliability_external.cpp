@@ -16,7 +16,7 @@
 
 using namespace std;
 
-// TODO: How do we make sure that we are not working on stale partial sum
+// TODO: How do we make sure that we are not working on stale partial state
 //       data. Data that is left over from a previous run? I don't see an
 //       easy way to check this from this program.
 
@@ -26,14 +26,14 @@ using namespace std;
  * Inputs:
  * - The delta t since the last measurement in milliseconds.
  * - Hotspot temperature file <hotspot_data> for the current core temperatures.
- * - File <current_sums> containing the current sums of dt/a(T) for all cores.
+ * - File <current_states> containing the current states of dt/a(T) for all cores.
  *
  * Outputs:
  * - Writes the current R values for all cores to the <r_values> file.
- * - Writes the updated sums dt/a(T) for all cores to the <current_sums> file.
+ * - Writes the updated states dt/a(T) for all cores to the <current_states> file.
  *
  * Usage:
- * ./reliability_external <delta_t> <hotspot_data> <current_sums> <r_values>
+ * ./reliability_external <delta_t> <hotspot_data> <current_states> <r_values>
  */
 
 /* Conversion functions */
@@ -83,60 +83,60 @@ pair<vector<string>, vector<long double>> read_instantaneous_temps(string inst_t
 }
 
 
-/* Read current sums from 'sum_filename'.
- * The format is a single line with the sums separated by whitespace:
- * sum_0 sum_1 ... sum_n
+/* Read current states from 'state_filename'.
+ * The format is a single line with the states separated by whitespace:
+ * state_0 state_1 ... state_n
  *
- * Returns: a vector with the current sums of cores C0..Cn.  */
-vector<long double> read_current_sums(string sum_filename,
+ * Returns: a vector with the current states of cores C0..Cn.  */
+vector<long double> read_current_states(string state_filename,
                                       string r_values_filename,
                                       size_t num_temperatures) {
-    vector<long double> current_sums;
+    vector<long double> current_states;
 
-    /* Open current sums file and perfom some sanity checking. */
-    if (!file_exists(sum_filename)) {
-        // If sums file does not exist return a vector with zeros.
+    /* Open current states file and perfom some sanity checking. */
+    if (!file_exists(state_filename)) {
+        // If states file does not exist return a vector with zeros.
         if (file_exists(r_values_filename)) {
-            throw runtime_error("R values file exists but sums file does not!");
+            throw runtime_error("R values file exists but states file does not!");
         }
-        current_sums.insert(current_sums.begin(), num_temperatures, 0.0);
-        return current_sums;
+        current_states.insert(current_states.begin(), num_temperatures, 0.0);
+        return current_states;
     }
 
-    ifstream current_sums_stream(sum_filename);
-    if (!current_sums_stream) {
-        throw runtime_error("Error opening the current sum file: " +
-                            sum_filename);
+    ifstream current_states_stream(state_filename);
+    if (!current_states_stream) {
+        throw runtime_error("Error opening the current state file: " +
+                            state_filename);
     }
 
-    /* Finally read the current sum data from file. */
+    /* Finally read the current state data from file. */
     string line;
-    getline(current_sums_stream, line);
+    getline(current_states_stream, line);
     stringstream strline(line);
-    string current_sum;
-    while (strline >> current_sum) {
-        current_sums.push_back(stold(current_sum));
+    string current_state;
+    while (strline >> current_state) {
+        current_states.push_back(stold(current_state));
     }
 
-    if (current_sums.size() != num_temperatures) {
+    if (current_states.size() != num_temperatures) {
         throw runtime_error(
             "The number of temperature values does not match the number of "
-            "current sums");
+            "current states");
     }
 
-    return current_sums;
+    return current_states;
 }
 
-/* Write latest sums to 'sum_filename'. */
-void write_current_sums(const vector<shared_ptr<Rmodel>> r_models, string sum_filename) {
-    ofstream sum_file(sum_filename);
+/* Write latest states to 'state_filename'. */
+void write_current_states(const vector<shared_ptr<Rmodel>> r_models, string state_filename) {
+    ofstream state_file(state_filename);
 
     bool first = true;
     for (const shared_ptr<Rmodel> &r_model : r_models) {
-        if (first) first = false; else sum_file << "\t";
-        sum_file << r_model->get_sum();
+        if (first) first = false; else state_file << "\t";
+        state_file << r_model->get_state();
     }
-    sum_file << endl;
+    state_file << endl;
 
 }
 
@@ -176,11 +176,11 @@ int main(int argc, char *argv[]) {
     /* Handle command line arguments. */
     if (argc < 5 || argc > 6) {
         cerr << "Usage: " << argv[0]
-             << " <delta_t (ms)> <hotspot_file> <current_sums_file> <r-values> [<acceleration_factor>]" << endl;
+             << " <delta_t (ms)> <hotspot_file> <current_states_file> <r-values> [<acceleration_factor>]" << endl;
         return 1;
     }
     char *temperature_filename = argv[2];
-    char *sum_filename = argv[3];
+    char *state_filename = argv[3];
     char *r_values_filename = argv[4];
     long double delta_t = ms_to_hour(stold(argv[1]));  // Delta t in hours.
     if (argc == 6) {
@@ -190,17 +190,17 @@ int main(int argc, char *argv[]) {
         delta_t *= stoll(argv[5]);
     }
 
-    /* Read temperature and current sums from file. */
+    /* Read temperature and current states from file. */
     vector<long double> temperatures;
     vector<string> header;
     tie(header, temperatures) = read_instantaneous_temps(temperature_filename);
-    vector<long double> current_sums =
-        read_current_sums(sum_filename, r_values_filename, temperatures.size());
+    vector<long double> current_states =
+        read_current_states(state_filename, r_values_filename, temperatures.size());
 
     /* Create reliability models for all cores and initialize them with the
-     * corresponding current sum. */
+     * corresponding current state. */
     vector<shared_ptr<Rmodel>> r_models;
-    for (long double s : current_sums) {
+    for (long double s : current_states) {
         r_models.push_back(make_shared<EM_model>(s));
     }
 
@@ -209,8 +209,8 @@ int main(int argc, char *argv[]) {
         (*it)->update(delta_t, temperatures[distance(r_models.begin(), it)]);
     }
 
-    /*  Write back the updated current_sums of the rmodels. */
-    write_current_sums(r_models, sum_filename);
+    /*  Write back the updated current_states of the rmodels. */
+    write_current_states(r_models, state_filename);
 
     /* Write new r values to file. */
     write_r_values(r_models, header, r_values_filename);

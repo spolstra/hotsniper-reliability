@@ -12,9 +12,9 @@ PROGS = reliability reliability_external
 
 all: $(PROGS)
 
-main.o: main.cpp reliability.h em_model.h wearout_model.h
+main.o: main.cpp rmodel.h em_model.h
 
-reliability_external.o: reliability_external.cpp em_model.h wearout_model.h
+reliability_external.o: reliability_external.cpp rmodel.h em_model.h
 
 reliability: main.o
 	$(CXX) -o $@ $(LDFLAGS) $^
@@ -30,7 +30,7 @@ run: $(PROGS)
 	./reliability < constant-temperature.log
 
 run_ext: $(PROGS)
-	./reliability_external 1 hotspot-sample-output.txt sums.txt rvalues.txt
+	./reliability_external 1 hotspot-sample-output.txt states.txt rvalues.txt
 
 clean:
 	rm -f $(PROGS) *.o
