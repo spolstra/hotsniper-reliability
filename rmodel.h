@@ -14,9 +14,10 @@ class Rmodel {
           current_state(o.current_state),
           area_under_curve(o.area_under_curve) {};
 
-    ~Rmodel(void) {};
+    virtual ~Rmodel(void) = default;
 
-    virtual void update(long double delta_t, long double temperature) {};
+    virtual void update(long double delta_t, long double temperature) = 0;
+    virtual void update_timestamp(long double new_time_stamp, long double temperature) = 0;
 
     long double get_R(void) const { return current_R; }
     long double get_state(void) const { return current_state; }

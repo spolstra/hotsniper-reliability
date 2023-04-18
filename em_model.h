@@ -4,6 +4,13 @@ class EM_model : public Rmodel {
     using Rmodel::Rmodel;
 
    public:
+    void update_timestamp(long double new_time_stamp, long double temperature) {
+        long double delta_t = new_time_stamp - current_time_stamp;
+        current_time_stamp = new_time_stamp;
+        update(delta_t, temperature);
+    }
+
+
     void update(long double delta_t, long double temperature) {
         if (delta_t < 0) {
             throw std::runtime_error("Negative delta_t is not allowed");
