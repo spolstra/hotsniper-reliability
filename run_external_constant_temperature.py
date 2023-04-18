@@ -27,7 +27,7 @@ def ms_to_year(t):
     return hour_to_year(ms_to_hour(t))
 
 # cleanup
-subprocess.run("rm -f rvalues.txt sums.txt", shell=True, check=True)
+subprocess.run("rm -f rvalues.txt states.txt", shell=True, check=True)
 
 # delta_t = 100_000_000  # sample time in ms
 delta_t = 8640000000 # 100 days in ms
@@ -44,7 +44,7 @@ with open(temp_file) as tfile:
 executable_path = os.path.join(script_dir, 'reliability_external')
 
 while True:
-    subprocess.run("{} {} {} sums.txt rvalues.txt".format(executable_path, delta_t, temp_file), shell=True, check=True)
+    subprocess.run("{} {} {} states.txt rvalues.txt".format(executable_path, delta_t, temp_file), shell=True, check=True)
     t += delta_t
     # if t % 1_000_000 == 0:
     with open('rvalues.txt') as f:

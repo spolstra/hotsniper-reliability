@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "reliability.h"
+#include "rmodel.h"
+#include "em_model.h"
 
 using namespace std;
 
@@ -48,9 +49,9 @@ int main(void) {
 
     /* Calculate reliability numbers for core 0. */
 
-    Rmodel rmodel(new EM_model());  // We use the EM failure model
+    EM_model rmodel;  // We use the EM failure model
     long double timestamp_h = 0;    // Current time in hours.
-    const long double sample_rate = ms_to_hour(100000);
+    const long double sample_rate_h = ms_to_hour(100000);
     long double R = 1.0 ; // new processor reliability.
     long long sample_count = 0;
 
@@ -58,10 +59,17 @@ int main(void) {
     const double long R_limit = 0.01;
     while (R > R_limit) {
         for (auto sample : temps) { // reuse of short temperature trace.
-            timestamp_h += sample_rate;
+            timestamp_h += sample_rate_h;
             sample_count++;
             long double core0_temperature = sample[0];
-            R = rmodel.add_measurement(core0_temperature, timestamp_h);
+
+            // We can update with an delta_t using the update() method:
+            // rmodel.update(sample_rate_h, core0_temperature);
+
+            // Or with the absolute timestamp with update_timestamp():
+            rmodel.update_timestamp(timestamp_h, core0_temperature);
+
+            R = rmodel.get_R();
             if (sample_count % 100000 == 0) {
                 cout << timestamp_h << ", " << R << endl;
             }
