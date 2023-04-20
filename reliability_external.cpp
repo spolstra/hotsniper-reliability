@@ -13,6 +13,7 @@
 
 #include "rmodel.h"
 #include "em_model.h"
+#include "nbti_model.h"
 
 using namespace std;
 
@@ -201,12 +202,13 @@ int main(int argc, char *argv[]) {
      * corresponding current state. */
     vector<shared_ptr<Rmodel>> r_models;
     for (long double s : current_states) {
-        r_models.push_back(make_shared<EM_model>(s));
+        // r_models.push_back(make_shared<EM_model>(s));
+        r_models.push_back(make_shared<NBTI_model>(s));
     }
 
     /* Update rmodels of cores with the latest temperature measurement. */
     for (auto it = r_models.begin(); it != r_models.end(); ++it) {
-        (*it)->update(delta_t, temperatures[distance(r_models.begin(), it)]);
+        (*it)->update(delta_t, temperatures[distance(r_models.begin(), it)], 1, 1);
     }
 
     /*  Write back the updated current_states of the rmodels. */
