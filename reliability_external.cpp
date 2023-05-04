@@ -10,6 +10,7 @@
 #include <utility>
 #include <tuple>
 #include <limits>
+#include <boost/range/combine.hpp>
 
 #include "rmodel.h"
 #include "em_model.h"
@@ -129,16 +130,21 @@ vector<long double> read_current_states(string state_filename,
 }
 
 /* Write latest states to 'state_filename'. */
-void write_current_states(const vector<shared_ptr<Rmodel>> r_models, string state_filename) {
+void write_current_states(const vector<shared_ptr<Rmodel>> r_models, string state_filename, int mode) {
     ofstream state_file(state_filename);
 
     bool first = true;
     for (const shared_ptr<Rmodel> &r_model : r_models) {
         if (first) first = false; else state_file << "\t";
-        state_file << r_model->get_state();
+        if (mode == 0) { 
+            state_file << r_model->get_state(); 
+        } else if (mode == 1) { 
+            state_file << r_model->get_delta_v(); 
+        } else {
+            cerr << "Invalid mode in call to function write_current_states." << endl;
+        }
     }
     state_file << endl;
-
 }
 
 /* Write the latest r-values to 'r_value_filename'. */
@@ -175,20 +181,23 @@ void print_vector(vector<long double> data) {
 
 int main(int argc, char *argv[]) {
     /* Handle command line arguments. */
-    if (argc < 5 || argc > 6) {
+    if (argc < 8 || argc > 9) {
         cerr << "Usage: " << argv[0]
-             << " <delta_t (ms)> <hotspot_file> <current_states_file> <r-values> [<acceleration_factor>]" << endl;
+             << " <delta_t (ms)> <timestamp (ms)> <hotspot_file> <vdd_file> <current_states_file> <current_delta_v_file> <r-values> [<acceleration_factor>]" << endl;
         return 1;
     }
-    char *temperature_filename = argv[2];
-    char *state_filename = argv[3];
-    char *r_values_filename = argv[4];
     long double delta_t = ms_to_hour(stold(argv[1]));  // Delta t in hours.
-    if (argc == 6) {
+    long double time = ms_to_hour(stold(argv[2]));  // timestamp in hours.
+    char *temperature_filename = argv[3];
+    char *vdd_filename = argv[4];
+    char *state_filename = argv[5];
+    char *delta_v_filename = argv[6];
+    char *r_values_filename = argv[7];
+    if (argc == 9) {
         // Eg. speed up aging : 1000 * 60 * 60 * 24 * 100 = 8640_000_000
         //                      |---- one day ----|
         // Age with a delta of 100 days instead of 1ms
-        delta_t *= stoll(argv[5]);
+        delta_t *= stoll(argv[8]);
     }
 
     /* Read temperature and current states from file. */
@@ -198,21 +207,34 @@ int main(int argc, char *argv[]) {
     vector<long double> current_states =
         read_current_states(state_filename, r_values_filename, temperatures.size());
 
+    vector<long double> voltages;
+    vector<string> vdd_header;
+    tie(vdd_header, voltages) = read_instantaneous_temps(vdd_filename);
+    while (voltages.size() != temperatures.size()) // pass a hardcoded voltage to the memory banks
+        voltages.push_back(0.8);
+    vector<long double> current_delta_vs =
+        read_current_states(delta_v_filename, r_values_filename, temperatures.size());
+
     /* Create reliability models for all cores and initialize them with the
      * corresponding current state. */
     vector<shared_ptr<Rmodel>> r_models;
-    for (long double s : current_states) {
-        // r_models.push_back(make_shared<EM_model>(s));
-        r_models.push_back(make_shared<NBTI_model>(s));
+    for (auto tup : boost::combine(current_states, current_delta_vs)) {
+        long double s, v;
+        boost::tie(s, v) = tup;
+        r_models.push_back(make_shared<NBTI_model>(time, s, v));
     }
 
     /* Update rmodels of cores with the latest temperature measurement. */
     for (auto it = r_models.begin(); it != r_models.end(); ++it) {
-        (*it)->update(delta_t, temperatures[distance(r_models.begin(), it)], 1, 1);
+        (*it)->update(delta_t,
+                      temperatures[distance(r_models.begin(), it)],
+                      voltages[distance(r_models.begin(), it)],
+                      0.8);
     }
 
     /*  Write back the updated current_states of the rmodels. */
-    write_current_states(r_models, state_filename);
+    write_current_states(r_models, state_filename, 0);
+    write_current_states(r_models, delta_v_filename, 1);
 
     /* Write new r values to file. */
     write_r_values(r_models, header, r_values_filename);

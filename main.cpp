@@ -69,7 +69,7 @@ int main(void) {
             // rmodel.update(sample_rate_h, core0_temperature);
 
             // Or with the absolute timestamp with update_timestamp():
-            rmodel.update_timestamp(timestamp_h, core0_temperature, 1, 1);
+            rmodel.update_timestamp(timestamp_h, core0_temperature, 0.8, 0.8);
 
             R = rmodel.get_R();
             if (sample_count % 100000 == 0) {

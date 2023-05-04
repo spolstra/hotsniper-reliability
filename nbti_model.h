@@ -32,41 +32,46 @@ class NBTI_model : public Rmodel {
 
         long double current_adf = adf(temperature, voltage, stress);
 
-        current_state = delta_v(current_adf, current_state, delta_t);
-        current_R = critical_fraction(current_state);
+        current_delta_v = delta_v(current_adf, delta_t);
+        current_state += delta_t / mttf();
+        current_R = expl(-1 * powl(current_state, BETA));
         area_under_curve += current_R * delta_t;
     }
 
    private:
-    // equation (7) from [1]
     long double adf(long double temp, long double voltage, long double stress) {
         long double temp_kelvin = celsius_to_kelvin(temp);
-
+        // equation (7) from [1]
         return CONST_K * expl(-1 * CONST_E0 / (BOLTZMANNCONSTANT * temp_kelvin)) *
             expl((CONST_B * voltage) / (CONST_OX * BOLTZMANNCONSTANT * temp_kelvin)) *
             powl(stress, CONST_N);
     }
 
-    long double delta_v(long double current_adf, long double current_delta_v, long double delta_t) {
+    long double delta_v(long double current_adf, long double delta_t) {
+        // equation (11) from [1]
         return current_adf * powl(powl(current_delta_v / current_adf, 1/CONST_N) + delta_t, CONST_N);
     }
 
-    // Delta_V as a fraction of initial V
-    long double critical_fraction(long double current_delta_v) {
-        return expl(-1.0*(current_delta_v / CONST_INIT_V)*10.0);
+    long double mttf(void) {
+        // equation (12) from [1]
+        long double eadf = current_delta_v/powl(current_time_stamp, CONST_N);
+
+        // equation (13) from [1]
+        return powl((0.1 * CONST_INIT_V) / eadf, 1/CONST_N);
     }
 
     long double celsius_to_kelvin(long double temp) { return temp + ZERO_CEL_IN_KELVIN; }
 
     // NBTI related parameters
     const long double BOLTZMANNCONSTANT = 8.6173324 * 0.00001;
+    const long double BETA              = 2;      // weibull scaling parameter
     const long double CONST_E0          = 0.1897; // from [1]
     const long double CONST_B           = 0.075;  // from [1]
     const long double CONST_N           = 0.167;  // from [2] (between 1/4 and 1/6 depending on diffusing species)
-    const long double CONST_K           = 0.42;   // from [3] (fitting parameter)
+    const long double CONST_K           = .98;   // fitting parameter
     const long double CONST_OX          = 1.4;    // from [3] (effective oxide thickness in nm)
 
-    const long double CONST_INIT_V      = 1.1;    // temporary value (initial threshold voltage)
+    const long double CONST_INIT_V      = 0.35;    // temporary value (initial threshold voltage)
 
     // Thermal model parameters
     const long double ZERO_CEL_IN_KELVIN = 273.15;
