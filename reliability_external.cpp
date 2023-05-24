@@ -210,8 +210,9 @@ int main(int argc, char *argv[]) {
     vector<long double> voltages;
     vector<string> vdd_header;
     tie(vdd_header, voltages) = read_instantaneous_log(vdd_filename);
-    while (voltages.size() != temperatures.size()) // pass a hardcoded voltage to the memory banks
-        voltages.push_back(0.8);
+    if (voltages.size() != temperatures.size()) {
+        throw runtime_error("The number of temperature values does not match the number of voltage values");
+    }
     vector<long double> current_states =
         read_current_states(state_filename, r_values_filename, temperatures.size());
     vector<long double> current_delta_vs =
