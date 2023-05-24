@@ -57,31 +57,31 @@ inline bool file_exists(const string &name) {
 
 /* Read header and temperatures.
  * Return a vector with the header names and a vector with the temperatures. */
-pair<vector<string>, vector<long double>> read_instantaneous_temps(string inst_temp_filename) {
+pair<vector<string>, vector<long double>> read_instantaneous_log(string inst_log_filename) {
     /* Open temperatures file. */
-    ifstream temperatures(inst_temp_filename);
-    if (!temperatures) {
-        throw runtime_error("Cannot open the instantaneous temperature file: " + inst_temp_filename);
+    ifstream log_file(inst_log_filename);
+    if (!log_file) {
+        throw runtime_error("Cannot open the instantaneous log file: " + inst_log_filename);
     }
 
     /* Read header. */
     vector<string> header;
     string header_line;
     string component_name;
-    getline(temperatures, header_line);
+    getline(log_file, header_line);
     stringstream ss = stringstream(header_line);
     while (ss >> component_name) {
         header.push_back(component_name);
     }
 
-    /* Read core temperatures. */
-    vector<long double> core_temperatures;
-    string temperature;
-    while (temperatures >> temperature) {
-        core_temperatures.push_back(stold(temperature));
+    /* Read core data. */
+    vector<long double> core_data;
+    string data;
+    while (log_file >> data) {
+        core_data.push_back(stold(data));
     }
 
-    return make_pair(header, core_temperatures);
+    return make_pair(header, core_data);
 }
 
 
@@ -129,7 +129,10 @@ vector<long double> read_current_states(string state_filename,
     return current_states;
 }
 
-/* Write latest states to 'state_filename'. */
+/* Write latest states to 'state_filename'.
+ * use mode 0 for regular state
+ * use mode 1 for delta_v
+ */
 void write_current_states(const vector<shared_ptr<Rmodel>> r_models, string state_filename, int mode) {
     ofstream state_file(state_filename);
 
@@ -203,15 +206,14 @@ int main(int argc, char *argv[]) {
     /* Read temperature and current states from file. */
     vector<long double> temperatures;
     vector<string> header;
-    tie(header, temperatures) = read_instantaneous_temps(temperature_filename);
-    vector<long double> current_states =
-        read_current_states(state_filename, r_values_filename, temperatures.size());
-
+    tie(header, temperatures) = read_instantaneous_log(temperature_filename);
     vector<long double> voltages;
     vector<string> vdd_header;
-    tie(vdd_header, voltages) = read_instantaneous_temps(vdd_filename);
+    tie(vdd_header, voltages) = read_instantaneous_log(vdd_filename);
     while (voltages.size() != temperatures.size()) // pass a hardcoded voltage to the memory banks
         voltages.push_back(0.8);
+    vector<long double> current_states =
+        read_current_states(state_filename, r_values_filename, temperatures.size());
     vector<long double> current_delta_vs =
         read_current_states(delta_v_filename, r_values_filename, temperatures.size());
 
