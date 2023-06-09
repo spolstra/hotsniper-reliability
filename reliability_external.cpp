@@ -99,7 +99,7 @@ vector<long double> read_current_states(string state_filename,
     if (!file_exists(state_filename)) {
         // If states file does not exist return a vector with zeros.
         if (file_exists(r_values_filename)) {
-            throw runtime_error("R values file exists but states file does not!");
+            throw runtime_error("R values file exists but state file " + state_filename + " does not!");
         }
         current_states.insert(current_states.begin(), num_temperatures, 0.0);
         return current_states;
@@ -107,7 +107,7 @@ vector<long double> read_current_states(string state_filename,
 
     ifstream current_states_stream(state_filename);
     if (!current_states_stream) {
-        throw runtime_error("Error opening the current state file: " +
+        throw runtime_error("Error opening the state file: " +
                             state_filename);
     }
 
@@ -123,7 +123,7 @@ vector<long double> read_current_states(string state_filename,
     if (current_states.size() != num_temperatures) {
         throw runtime_error(
             "The number of temperature values does not match the number of "
-            "current states");
+            "states in file: " + state_filename);
     }
 
     return current_states;

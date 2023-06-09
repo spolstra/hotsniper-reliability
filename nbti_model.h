@@ -9,6 +9,7 @@
         [3] Kleeberger (2013) A compact model for NBTI degradation and recovery
             under use-profile variations and its application to aging analysis
             of digital integrated circuits
+        [4] https://www.intel.com/content/dam/www/public/us/en/documents/presentation/revolutionary-22nm-transistor-technology-presentation.pdf
  */
 
 class NBTI_model : public Rmodel {
@@ -65,13 +66,12 @@ class NBTI_model : public Rmodel {
     // NBTI related parameters
     const long double BOLTZMANNCONSTANT = 8.6173324 * 0.00001;
     const long double BETA              = 2;      // weibull scaling parameter
-    const long double CONST_E0          = 0.1897; // from [1]
-    const long double CONST_B           = 0.075;  // from [1]
+    const long double CONST_E0          = 0.1897; // from [1] (fitting parameter)
+    const long double CONST_B           = 0.075;  // from [1] (fitting parameter)
     const long double CONST_N           = 0.167;  // from [2] (between 1/4 and 1/6 depending on diffusing species)
-    const long double CONST_K           = .98;   // fitting parameter
+    const long double CONST_K           = 0.98;   // determined experimentally (fitting parameter)
     const long double CONST_OX          = 1.4;    // from [3] (effective oxide thickness in nm)
-
-    const long double CONST_INIT_V      = 0.35;    // temporary value (initial threshold voltage)
+    const long double CONST_INIT_V      = 0.35;   // from [4] (initial threshold voltage)
 
     // Thermal model parameters
     const long double ZERO_CEL_IN_KELVIN = 273.15;
