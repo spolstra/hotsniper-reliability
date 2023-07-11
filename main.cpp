@@ -13,7 +13,8 @@ vector<vector<long double>> read_temps(void) {
     vector<vector<long double>> temps;
     string line;
     getline(cin, line);  // skip header
-    if (line.find("Core") == string::npos) {
+    if (line.find("Core") == string::npos &&
+            line.find("C_") == string::npos) {
         throw runtime_error("Missing header in temperature file");
     }
 
