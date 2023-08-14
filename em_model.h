@@ -1,5 +1,7 @@
 #include <cmath>
 
+#define UNUSED(var) do { (void)(var); } while (false)
+
 class EM_model : public Rmodel {
     using Rmodel::Rmodel;
 
@@ -12,6 +14,8 @@ class EM_model : public Rmodel {
 
 
     void update(long double delta_t, long double temperature, long double voltage, long double stress) {
+        UNUSED(voltage);
+        UNUSED(stress);
         if (delta_t < 0) {
             throw std::runtime_error("Negative delta_t is not allowed");
         }
