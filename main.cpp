@@ -5,6 +5,7 @@
 
 #include "rmodel.h"
 #include "em_model.h"
+#include "nbti_model.h"
 
 using namespace std;
 
@@ -50,7 +51,8 @@ int main(void) {
 
     /* Calculate reliability numbers for core 0. */
 
-    EM_model rmodel;  // We use the EM failure model
+    // EM_model rmodel;  // We use the EM failure model
+    NBTI_model rmodel;  // We use the NBTI failure model
     long double timestamp_h = 0;    // Current time in hours.
     const long double sample_rate_h = ms_to_hour(100000);
     long double R = 1.0 ; // new processor reliability.
@@ -68,7 +70,7 @@ int main(void) {
             // rmodel.update(sample_rate_h, core0_temperature);
 
             // Or with the absolute timestamp with update_timestamp():
-            rmodel.update_timestamp(timestamp_h, core0_temperature);
+            rmodel.update_timestamp(timestamp_h, core0_temperature, 0.8, 0.8);
 
             R = rmodel.get_R();
             if (sample_count % 100000 == 0) {
